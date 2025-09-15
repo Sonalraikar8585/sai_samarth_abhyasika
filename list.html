@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student List</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <button onclick="location.href='index.html'">Back to Dashboard</button>
+  
+  <h2>Student List</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>S.No</th>
+        <th>Name</th>
+        <th>Timing</th>
+        <th>Paid Date</th>
+        <th>Table No</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="studentTableBody"></tbody>
+  </table>
+
+  <script>
+    function getFeesData() {
+      return JSON.parse(localStorage.getItem('feesData')) || [];
+    }
+
+    function saveFeesData(data) {
+      localStorage.setItem('feesData', JSON.stringify(data));
+    }
+
+    function displayStudents() {
+      const data = getFeesData();
+      const tbody = document.getElementById('studentTableBody');
+      tbody.innerHTML = '';
+      data.forEach((s, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i+1}</td>
+          <td>${s.name}</td>
+          <td>${s.timing}</td>
+          <td>${s.paidDate}</td>
+          <td>${s.tableNo}</td>
+          <td>
+            <button onclick="removeStudent(${i})" class="remove-btn">Remove</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function removeStudent(index) {
+      // remove from feesData and free up seats in slots
+      const data = getFeesData();
+      const student = data[index];
+      if (!student) return;
+      // free slots
+      const slots = JSON.parse(localStorage.getItem('slots')) || { morning: Array(80).fill(null), afternoon: Array(80).fill(null) };
+      if (student.timing === 'morning') {
+        slots.morning[student.tableNo - 1] = null;
+      } else if (student.timing === 'evening') {
+        slots.afternoon[student.tableNo - 1] = null;
+      } else if (student.timing === 'full') {
+        slots.morning[student.tableNo - 1] = null;
+        slots.afternoon[student.tableNo - 1] = null;
+      }
+      localStorage.setItem('slots', JSON.stringify(slots));
+
+      data.splice(index,1);
+      saveFeesData(data);
+      displayStudents();
+      // if on slots page, it will re-render on its own when opened
+    }
+
+    displayStudents();
+  </script>
+</body>
+</html>
