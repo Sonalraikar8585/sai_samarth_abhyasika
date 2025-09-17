@@ -1,7 +1,7 @@
-# Sai Samartha Abhyasaka – Lab Management System
+# Sai Samartha Abhyasika – Lab Management System
 
 ## Project Description
-**Sai Samartha Abhyasaka** is a web-based Lab Management System designed to help lab or library administrators efficiently manage student activities, fees, and study room/library slots. The system provides an intuitive interface for the admin to monitor students, track monthly fee collection, and manage the occupancy of slots in the library or study rooms.
+**Sai Samartha Abhyasika** is a web-based Lab Management System designed to help lab or library administrators efficiently manage student activities, fees, and study room/library slots. The system provides an intuitive interface for the admin to monitor students, track monthly fee collection, and manage the occupancy of slots in the library or study rooms.
 
 This project aims to streamline administrative tasks in educational labs or study centers, reducing manual work and improving student management.
 
