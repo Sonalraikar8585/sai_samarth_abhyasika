@@ -13,13 +13,30 @@
 
     <div class="slot-section">
       <h2>Morning Slot (80 Seats)</h2>
+<<<<<<< HEAD
       <!-- Removed manual assign form -->
+=======
+      <!-- Manual assign form still available -->
+      <form onsubmit="assignSeatManual(event, 'morning')">
+        <input type="number" min="1" max="80" id="morningSeat" placeholder="Seat No" required />
+        <input type="text" id="morningName" placeholder="Student Name" required />
+        <button type="submit">Assign</button>
+      </form>
+>>>>>>> fcf48633d3accef5bc8c03f36ebc7c27782e24fb
       <div id="morningTable" class="seat-grid"></div>
     </div>
 
     <div class="slot-section">
       <h2>Afternoon Slot (80 Seats)</h2>
+<<<<<<< HEAD
       <!-- Removed manual assign form -->
+=======
+      <form onsubmit="assignSeatManual(event, 'afternoon')">
+        <input type="number" min="1" max="80" id="afternoonSeat" placeholder="Seat No" required />
+        <input type="text" id="afternoonName" placeholder="Student Name" required />
+        <button type="submit">Assign</button>
+      </form>
+>>>>>>> fcf48633d3accef5bc8c03f36ebc7c27782e24fb
       <div id="afternoonTable" class="seat-grid"></div>
     </div>
 
