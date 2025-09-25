@@ -88,35 +88,7 @@ function displayFees() {
   });
 }
 
-function removeFee(name) {
-  let data = getFeesData();
-  let slots = getSlots();
-  let history = getHistory();
 
-  const student = data.find(f => f.name === name);
-  if (!student) return;
-
-  const idx = student.tableNo - 1;
-  if (student.timing === 'morning') slots.morning[idx] = null;
-  else if (student.timing === 'afternoon') slots.afternoon[idx] = null;
-  else if (student.timing === 'full') {
-    slots.morning[idx] = null;
-    slots.afternoon[idx] = null;
-  }
-  saveSlots(slots);
-
-  // Remove from fees
-  data = data.filter(f => f.name !== name);
-  saveFeesData(data);
-
-  // Remove from history
-  delete history[name];
-  saveHistory(history);
-
-  displayFees();
-  displaySeats();
-  displayHistory();
-}
 
 function markAsPaid(name) {
   const data = getFeesData();
@@ -159,15 +131,6 @@ function displayHistory() {
       `</ul>`;
     container.appendChild(div);
   });
-}
-function removeHistoryEntry(name, index) {
-  const history = getHistory();
-  if (history[name]) {
-    history[name].splice(index,1);
-    if (history[name].length === 0) delete history[name];
-    saveHistory(history);
-    displayHistory();
-  }
 }
 
 // handle add from fees form
@@ -244,8 +207,51 @@ function displaySeats() {
   });
 }
 
+function removeFee(name) {
+  if (!confirm(`Are you sure you want to remove ${name}?`)) return;
+
+  let data = getFeesData();
+  let slots = getSlots();
+  let history = getHistory();
+
+  const student = data.find(f => f.name === name);
+  if (!student) return;
+
+  const idx = student.tableNo - 1;
+  if (student.timing === 'morning') slots.morning[idx] = null;
+  else if (student.timing === 'afternoon') slots.afternoon[idx] = null;
+  else if (student.timing === 'full') {
+    slots.morning[idx] = null;
+    slots.afternoon[idx] = null;
+  }
+  saveSlots(slots);
+
+  data = data.filter(f => f.name !== name);
+  saveFeesData(data);
+
+  delete history[name];
+  saveHistory(history);
+
+  displayFees();
+  displaySeats();
+  displayHistory();
+}
+
+function removeHistoryEntry(name, index) {
+  if (!confirm(`Are you sure you want to delete this history entry for ${name}?`)) return;
+
+  const history = getHistory();
+  if (history[name]) {
+    history[name].splice(index,1);
+    if (history[name].length === 0) delete history[name];
+    saveHistory(history);
+    displayHistory();
+  }
+}
 
 function removeSeat(slot, index, name) {
+  if (!confirm(`Are you sure you want to remove ${name} from seat ${index+1} (${slot})?`)) return;
+
   let slots = getSlots();
   let fees = getFeesData();
   let history = getHistory();
@@ -261,11 +267,9 @@ function removeSeat(slot, index, name) {
   }
   saveSlots(slots);
 
-  // Remove fees entry
   fees = fees.filter(f => f.name !== name);
   saveFeesData(fees);
 
-  // Remove from history
   delete history[name];
   saveHistory(history);
 
@@ -274,8 +278,9 @@ function removeSeat(slot, index, name) {
   displayHistory();
 }
 
+
 // ----------------- Init -----------------
 initializeSlotsIfNeeded();
 displaySeats();
 displayFees();
-displayHistory();
+displayHistory();  
