@@ -45,13 +45,10 @@ function isDue(paidDateStr) {
   const nextDue = new Date(paidDate);
   nextDue.setMonth(nextDue.getMonth() + 1);
   const today = new Date();
-  today.setHours(0,0,0,0);
-
-  // due for today, tomorrow or past
-  const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
-  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-  const dueCheck = new Date(nextDue);
-  return dueCheck <= tomorrow;
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  return nextDue <= tomorrow;
 }
 
 // ----------------- FEES PAGE -----------------
@@ -72,7 +69,7 @@ function displayFees() {
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${index+1}</td>
+      <td>${index + 1}</td>
       <td>${item.name}</td>
       <td>${item.timing}</td>
       <td>${paidDateFormatted}</td>
@@ -82,13 +79,14 @@ function displayFees() {
         ${due ? '<br><span class="alert"> Fees to be collected!</span>' : ''}
       </td>
       <td>${!item.paid ? `<input type="checkbox" onchange="markAsPaid('${item.name}')" />` : '✅ Paid'}</td>
-      <td><button onclick="removeFee('${item.name}')">Remove</button></td>
+      <td>
+        <button onclick="editFee('${item.name}')">Edit</button>
+        <button onclick="removeFee('${item.name}')">Remove</button>
+      </td>
     `;
     feesTable.appendChild(tr);
   });
 }
-
-
 
 function markAsPaid(name) {
   const data = getFeesData();
@@ -133,9 +131,31 @@ function displayHistory() {
   });
 }
 
-// handle add from fees form
-document.getElementById('feesForm')?.addEventListener('submit', function(e) {
+// ----------------- EDIT MODE HANDLING -----------------
+let editMode = false;
+let editName = null;
+
+function editFee(name) {
+  const data = getFeesData();
+  const entry = data.find(f => f.name === name);
+  if (!entry) return;
+
+  document.getElementById('name').value = entry.name;
+  document.getElementById('timing').value = entry.timing;
+  document.getElementById('paidDate').value = entry.paidDate;
+  document.getElementById('tableNo').value = entry.tableNo;
+
+  const submitBtn = document.querySelector('#feesForm button[type="submit"]');
+  submitBtn.textContent = 'Update Entry';
+
+  editMode = true;
+  editName = name;
+}
+
+// ----------------- FORM HANDLING -----------------
+document.getElementById('feesForm')?.addEventListener('submit', function (e) {
   e.preventDefault();
+
   const name = document.getElementById('name').value.trim();
   const timing = document.getElementById('timing').value;
   const paidDate = document.getElementById('paidDate').value;
@@ -146,6 +166,62 @@ document.getElementById('feesForm')?.addEventListener('submit', function(e) {
   let fees = getFeesData();
   let slots = getSlots();
 
+  // ------------ UPDATE MODE ------------
+  if (editMode) {
+    const idxOld = fees.findIndex(f => f.name === editName);
+    if (idxOld === -1) return alert('Original entry not found.');
+
+    const oldEntry = fees[idxOld];
+    const oldSlotIdx = oldEntry.tableNo - 1;
+
+    // Clear old seat(s)
+    if (oldEntry.timing === 'morning') slots.morning[oldSlotIdx] = null;
+    else if (oldEntry.timing === 'afternoon') slots.afternoon[oldSlotIdx] = null;
+    else if (oldEntry.timing === 'full') {
+      slots.morning[oldSlotIdx] = null;
+      slots.afternoon[oldSlotIdx] = null;
+    }
+
+    // Check seat availability
+    const newSlotIdx = tableNo - 1;
+    if (timing === 'morning' && slots.morning[newSlotIdx] && slots.morning[newSlotIdx].name !== editName) {
+      alert('Seat taken in morning!');
+      return;
+    }
+    if (timing === 'afternoon' && slots.afternoon[newSlotIdx] && slots.afternoon[newSlotIdx].name !== editName) {
+      alert('Seat taken in afternoon!');
+      return;
+    }
+    if (timing === 'full' && (slots.morning[newSlotIdx] || slots.afternoon[newSlotIdx])) {
+      alert('Seat taken for full day!');
+      return;
+    }
+
+    // Assign updated seat
+    if (timing === 'morning') slots.morning[newSlotIdx] = { name, timing };
+    else if (timing === 'afternoon') slots.afternoon[newSlotIdx] = { name, timing };
+    else if (timing === 'full') {
+      slots.morning[newSlotIdx] = { name, timing: 'full' };
+      slots.afternoon[newSlotIdx] = { name, timing: 'full' };
+    }
+
+    // Update entry in fees
+    fees[idxOld] = { name, timing, paidDate, tableNo, paid: false };
+
+    saveSlots(slots);
+    saveFeesData(fees);
+
+    editMode = false;
+    editName = null;
+    document.querySelector('#feesForm button[type="submit"]').textContent = 'Add Entry';
+    this.reset();
+
+    displayFees();
+    displaySeats();
+    return;
+  }
+
+  // ------------ ADD NEW MODE ------------
   if (fees.some(f => f.name.toLowerCase() === name.toLowerCase())) {
     alert('Student with this name already exists.');
     return;
@@ -164,9 +240,8 @@ document.getElementById('feesForm')?.addEventListener('submit', function(e) {
     slots.afternoon[idx] = { name, timing: 'full' };
   }
 
-  saveSlots(slots);
-
   fees.push({ name, timing, paidDate, tableNo, paid: false });
+  saveSlots(slots);
   saveFeesData(fees);
 
   this.reset();
@@ -174,39 +249,7 @@ document.getElementById('feesForm')?.addEventListener('submit', function(e) {
   displaySeats();
 });
 
-// ----------------- SLOTS PAGE -----------------
-function displaySeats() {
-  const slots = getSlots();
-  ['morning','afternoon'].forEach(slot => {
-    const container = document.getElementById(slot + 'Table');
-    if (!container) return;
-    container.innerHTML = '';
-    for (let i = 0; i < 80; i++) {
-      const student = slots[slot][i];
-      const seat = document.createElement('div');
-      seat.className = 'seat';
-      if (student) {
-        seat.classList.add('occupied');
-
-        // Apply CSS classes for colors instead of inline styles
-        if (student.timing === 'morning') seat.classList.add('seat-morning');
-        else if (student.timing === 'afternoon') seat.classList.add('seat-afternoon');
-        else if (student.timing === 'full') seat.classList.add('seat-full');
-
-        seat.innerHTML = `
-          <strong>${i+1}</strong><br>
-          ${student.name}<br>
-          <small>(${student.timing})</small><br>
-          <button onclick="removeSeat('${slot}', ${i}, '${student.name}')">Remove</button>
-        `;
-      } else {
-        seat.innerHTML = `<strong>${i+1}</strong><br><em>Empty</em>`;
-      }
-      container.appendChild(seat);
-    }
-  });
-}
-
+// ----------------- REMOVE FUNCTIONS -----------------
 function removeFee(name) {
   if (!confirm(`Are you sure you want to remove ${name}?`)) return;
 
@@ -224,11 +267,10 @@ function removeFee(name) {
     slots.morning[idx] = null;
     slots.afternoon[idx] = null;
   }
-  saveSlots(slots);
 
+  saveSlots(slots);
   data = data.filter(f => f.name !== name);
   saveFeesData(data);
-
   delete history[name];
   saveHistory(history);
 
@@ -238,20 +280,48 @@ function removeFee(name) {
 }
 
 function removeHistoryEntry(name, index) {
-  if (!confirm(`Are you sure you want to delete this history entry for ${name}?`)) return;
-
+  if (!confirm(`Delete this history entry for ${name}?`)) return;
   const history = getHistory();
   if (history[name]) {
-    history[name].splice(index,1);
+    history[name].splice(index, 1);
     if (history[name].length === 0) delete history[name];
     saveHistory(history);
     displayHistory();
   }
 }
 
-function removeSeat(slot, index, name) {
-  if (!confirm(`Are you sure you want to remove ${name} from seat ${index+1} (${slot})?`)) return;
+// ----------------- SEATS -----------------
+function displaySeats() {
+  const slots = getSlots();
+  ['morning', 'afternoon'].forEach(slot => {
+    const container = document.getElementById(slot + 'Table');
+    if (!container) return;
+    container.innerHTML = '';
+    for (let i = 0; i < 80; i++) {
+      const student = slots[slot][i];
+      const seat = document.createElement('div');
+      seat.className = 'seat';
+      if (student) {
+        seat.classList.add('occupied');
+        if (student.timing === 'morning') seat.classList.add('seat-morning');
+        else if (student.timing === 'afternoon') seat.classList.add('seat-afternoon');
+        else if (student.timing === 'full') seat.classList.add('seat-full');
+        seat.innerHTML = `
+          <strong>${i + 1}</strong><br>
+          ${student.name}<br>
+          <small>(${student.timing})</small><br>
+          <button onclick="removeSeat('${slot}', ${i}, '${student.name}')">Remove</button>
+        `;
+      } else {
+        seat.innerHTML = `<strong>${i + 1}</strong><br><em>Empty</em>`;
+      }
+      container.appendChild(seat);
+    }
+  });
+}
 
+function removeSeat(slot, index, name) {
+  if (!confirm(`Are you sure you want to remove ${name} from seat ${index + 1} (${slot})?`)) return;
   let slots = getSlots();
   let fees = getFeesData();
   let history = getHistory();
@@ -269,7 +339,6 @@ function removeSeat(slot, index, name) {
 
   fees = fees.filter(f => f.name !== name);
   saveFeesData(fees);
-
   delete history[name];
   saveHistory(history);
 
@@ -278,9 +347,8 @@ function removeSeat(slot, index, name) {
   displayHistory();
 }
 
-
 // ----------------- Init -----------------
 initializeSlotsIfNeeded();
 displaySeats();
 displayFees();
-displayHistory();  
+displayHistory();
