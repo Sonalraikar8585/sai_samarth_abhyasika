@@ -2,30 +2,56 @@
 function getFeesData() {
   return JSON.parse(localStorage.getItem('feesData')) || [];
 }
+
 function saveFeesData(data) {
   localStorage.setItem('feesData', JSON.stringify(data));
 }
+
 function getHistory() {
   return JSON.parse(localStorage.getItem('feesHistory')) || {};
 }
+
 function saveHistory(history) {
   localStorage.setItem('feesHistory', JSON.stringify(history));
 }
 
 function initializeSlotsIfNeeded() {
   let slots = JSON.parse(localStorage.getItem('slots'));
+
   if (!slots) {
-    slots = { morning: Array(80).fill(null), afternoon: Array(80).fill(null) };
+    slots = {
+      morning: Array(95).fill(null),
+      afternoon: Array(95).fill(null)
+    };
+
+    localStorage.setItem('slots', JSON.stringify(slots));
+  } else {
+    // Expand existing slots from 80 to 95 if needed
+    if (slots.morning.length < 95) {
+      while (slots.morning.length < 95) {
+        slots.morning.push(null);
+      }
+    }
+
+    if (slots.afternoon.length < 95) {
+      while (slots.afternoon.length < 95) {
+        slots.afternoon.push(null);
+      }
+    }
+
     localStorage.setItem('slots', JSON.stringify(slots));
   }
 }
+
 function getSlots() {
   initializeSlotsIfNeeded();
   return JSON.parse(localStorage.getItem('slots'));
 }
+
 function saveSlots(data) {
   localStorage.setItem('slots', JSON.stringify(data));
 }
+
 
 // ----------------- Date helpers -----------------
 function formatDateToDDMMYY(dateStr) {
@@ -35,11 +61,13 @@ function formatDateToDDMMYY(dateStr) {
   const yy = String(d.getFullYear()).slice(-2);
   return `${dd}-${mm}-${yy}`;
 }
+
 function getNextMonthDate(dateStr) {
   const date = new Date(dateStr);
   date.setMonth(date.getMonth() + 1);
   return date;
 }
+
 function isDue(paidDateStr) {
   const paidDate = new Date(paidDateStr);
   const nextDue = new Date(paidDate);
@@ -50,6 +78,7 @@ function isDue(paidDateStr) {
   tomorrow.setDate(today.getDate() + 1);
   return nextDue <= tomorrow;
 }
+
 
 // ----------------- FEES PAGE -----------------
 function displayFees() {
@@ -88,6 +117,7 @@ function displayFees() {
   });
 }
 
+
 function markAsPaid(name) {
   const data = getFeesData();
   const entry = data.find(f => f.name === name);
@@ -100,6 +130,7 @@ function markAsPaid(name) {
     timing: entry.timing,
     tableNo: entry.tableNo
   });
+
   saveHistory(history);
 
   const nextDate = getNextMonthDate(entry.paidDate);
@@ -110,6 +141,7 @@ function markAsPaid(name) {
   displayFees();
   displayHistory();
 }
+
 
 function displayHistory() {
   const container = document.getElementById("historyContainer");
@@ -130,6 +162,7 @@ function displayHistory() {
     container.appendChild(div);
   });
 }
+
 
 // ----------------- EDIT MODE HANDLING -----------------
 let editMode = false;
@@ -152,6 +185,7 @@ function editFee(name) {
   editName = name;
 }
 
+
 // ----------------- FORM HANDLING -----------------
 document.getElementById('feesForm')?.addEventListener('submit', function (e) {
   e.preventDefault();
@@ -162,6 +196,12 @@ document.getElementById('feesForm')?.addEventListener('submit', function (e) {
   const tableNo = parseInt(document.getElementById('tableNo').value, 10);
 
   if (!name || !timing || !paidDate || !tableNo) return;
+
+  // Seat number must be between 1 and 95
+  if (tableNo < 1 || tableNo > 95) {
+    alert('Table/Seat number must be between 1 and 95.');
+    return;
+  }
 
   let fees = getFeesData();
   let slots = getSlots();
@@ -184,29 +224,47 @@ document.getElementById('feesForm')?.addEventListener('submit', function (e) {
 
     // Check seat availability
     const newSlotIdx = tableNo - 1;
-    if (timing === 'morning' && slots.morning[newSlotIdx] && slots.morning[newSlotIdx].name !== editName) {
+
+    if (timing === 'morning' &&
+        slots.morning[newSlotIdx] &&
+        slots.morning[newSlotIdx].name !== editName) {
       alert('Seat taken in morning!');
       return;
     }
-    if (timing === 'afternoon' && slots.afternoon[newSlotIdx] && slots.afternoon[newSlotIdx].name !== editName) {
+
+    if (timing === 'afternoon' &&
+        slots.afternoon[newSlotIdx] &&
+        slots.afternoon[newSlotIdx].name !== editName) {
       alert('Seat taken in afternoon!');
       return;
     }
-    if (timing === 'full' && (slots.morning[newSlotIdx] || slots.afternoon[newSlotIdx])) {
+
+    if (timing === 'full' &&
+        (slots.morning[newSlotIdx] || slots.afternoon[newSlotIdx])) {
       alert('Seat taken for full day!');
       return;
     }
 
     // Assign updated seat
-    if (timing === 'morning') slots.morning[newSlotIdx] = { name, timing };
-    else if (timing === 'afternoon') slots.afternoon[newSlotIdx] = { name, timing };
+    if (timing === 'morning') {
+      slots.morning[newSlotIdx] = { name, timing };
+    }
+    else if (timing === 'afternoon') {
+      slots.afternoon[newSlotIdx] = { name, timing };
+    }
     else if (timing === 'full') {
       slots.morning[newSlotIdx] = { name, timing: 'full' };
       slots.afternoon[newSlotIdx] = { name, timing: 'full' };
     }
 
     // Update entry in fees
-    fees[idxOld] = { name, timing, paidDate, tableNo, paid: false };
+    fees[idxOld] = {
+      name,
+      timing,
+      paidDate,
+      tableNo,
+      paid: false
+    };
 
     saveSlots(slots);
     saveFeesData(fees);
@@ -221,6 +279,7 @@ document.getElementById('feesForm')?.addEventListener('submit', function (e) {
     return;
   }
 
+
   // ------------ ADD NEW MODE ------------
   if (fees.some(f => f.name.toLowerCase() === name.toLowerCase())) {
     alert('Student with this name already exists.');
@@ -228,19 +287,38 @@ document.getElementById('feesForm')?.addEventListener('submit', function (e) {
   }
 
   const idx = tableNo - 1;
+
   if (timing === 'morning') {
-    if (slots.morning[idx]) { alert('Seat taken.'); return; }
+    if (slots.morning[idx]) {
+      alert('Seat taken.');
+      return;
+    }
     slots.morning[idx] = { name, timing };
-  } else if (timing === 'afternoon') {
-    if (slots.afternoon[idx]) { alert('Seat taken.'); return; }
+  }
+  else if (timing === 'afternoon') {
+    if (slots.afternoon[idx]) {
+      alert('Seat taken.');
+      return;
+    }
     slots.afternoon[idx] = { name, timing };
-  } else if (timing === 'full') {
-    if (slots.morning[idx] || slots.afternoon[idx]) { alert('Seat taken.'); return; }
+  }
+  else if (timing === 'full') {
+    if (slots.morning[idx] || slots.afternoon[idx]) {
+      alert('Seat taken.');
+      return;
+    }
     slots.morning[idx] = { name, timing: 'full' };
     slots.afternoon[idx] = { name, timing: 'full' };
   }
 
-  fees.push({ name, timing, paidDate, tableNo, paid: false });
+  fees.push({
+    name,
+    timing,
+    paidDate,
+    tableNo,
+    paid: false
+  });
+
   saveSlots(slots);
   saveFeesData(fees);
 
@@ -248,6 +326,7 @@ document.getElementById('feesForm')?.addEventListener('submit', function (e) {
   displayFees();
   displaySeats();
 });
+
 
 // ----------------- REMOVE FUNCTIONS -----------------
 function removeFee(name) {
@@ -261,6 +340,7 @@ function removeFee(name) {
   if (!student) return;
 
   const idx = student.tableNo - 1;
+
   if (student.timing === 'morning') slots.morning[idx] = null;
   else if (student.timing === 'afternoon') slots.afternoon[idx] = null;
   else if (student.timing === 'full') {
@@ -279,66 +359,95 @@ function removeFee(name) {
   displayHistory();
 }
 
+
 function removeHistoryEntry(name, index) {
   if (!confirm(`Delete this history entry for ${name}?`)) return;
+
   const history = getHistory();
+
   if (history[name]) {
     history[name].splice(index, 1);
-    if (history[name].length === 0) delete history[name];
+
+    if (history[name].length === 0) {
+      delete history[name];
+    }
+
     saveHistory(history);
     displayHistory();
   }
 }
 
+
 // ----------------- SEATS -----------------
 function displaySeats() {
   const slots = getSlots();
+
   ['morning', 'afternoon'].forEach(slot => {
     const container = document.getElementById(slot + 'Table');
     if (!container) return;
+
     container.innerHTML = '';
-    for (let i = 0; i < 80; i++) {
+
+    for (let i = 0; i < 95; i++) {
       const student = slots[slot][i];
+
       const seat = document.createElement('div');
       seat.className = 'seat';
+
       if (student) {
         seat.classList.add('occupied');
-        if (student.timing === 'morning') seat.classList.add('seat-morning');
-        else if (student.timing === 'afternoon') seat.classList.add('seat-afternoon');
-        else if (student.timing === 'full') seat.classList.add('seat-full');
+
+        if (student.timing === 'morning') {
+          seat.classList.add('seat-morning');
+        }
+        else if (student.timing === 'afternoon') {
+          seat.classList.add('seat-afternoon');
+        }
+        else if (student.timing === 'full') {
+          seat.classList.add('seat-full');
+        }
+
         seat.innerHTML = `
           <strong>${i + 1}</strong><br>
           ${student.name}<br>
           <small>(${student.timing})</small><br>
           <button onclick="removeSeat('${slot}', ${i}, '${student.name}')">Remove</button>
         `;
-      } else {
+      }
+      else {
         seat.innerHTML = `<strong>${i + 1}</strong><br><em>Empty</em>`;
       }
+
       container.appendChild(seat);
     }
   });
 }
 
+
 function removeSeat(slot, index, name) {
   if (!confirm(`Are you sure you want to remove ${name} from seat ${index + 1} (${slot})?`)) return;
+
   let slots = getSlots();
   let fees = getFeesData();
   let history = getHistory();
 
   const occupant = slots[slot][index];
+
   if (!occupant) return;
 
   if (occupant.timing === 'full') {
     slots.morning[index] = null;
     slots.afternoon[index] = null;
-  } else {
+  }
+  else {
     slots[slot][index] = null;
   }
+
   saveSlots(slots);
 
   fees = fees.filter(f => f.name !== name);
   saveFeesData(fees);
+
   delete history[name];
   saveHistory(history);
 
@@ -346,6 +455,7 @@ function removeSeat(slot, index, name) {
   displayFees();
   displayHistory();
 }
+
 
 // ----------------- Init -----------------
 initializeSlotsIfNeeded();
