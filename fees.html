@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Fees Collection</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <button onclick="location.href='index.html'">Back to Dashboard</button>
+  
+  <h2>Fees Management</h2>
+
+  <form id="feesForm">
+    <input type="text" placeholder="Name" id="name" required />
+    <select id="timing" required>
+  <option value="">Select Timing</option>
+  <option value="morning">Morning (7am - 2pm)</option>
+  <option value="afternoon">Afternoon (2pm - 10pm)</option>
+  <option value="full">Full Day (7am - 10pm)</option>
+</select>
+
+    <input type="date" id="paidDate" required />
+    <input type="number" id="tableNo" min="1" max="80" placeholder="Table No (1-80)" required />
+    <button type="submit">Add Entry</button>
+  </form>
+
+  <table id="feesTable">
+    <thead>
+      <tr>
+        <th>S.No</th>
+        <th>Name</th>
+        <th>Timing</th>
+        <th>Paid Date</th>
+        <th>Table No</th>
+        <th>Next Fee Date</th>
+        <th>Mark Paid</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>Payment History</h2>
+  <div id="historyContainer"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
