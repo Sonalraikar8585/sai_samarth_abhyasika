@@ -1,0 +1,51 @@
+# Sai Samartha Abhyasika – Lab Management System
+
+## Project Overview
+**Sai Samartha Abhyasika** is a web-based Lab Management System designed to help lab or library administrators efficiently manage students, fees, and study/library slots. The system provides an intuitive interface for admins to monitor students, track monthly fee collection, and manage the occupancy of study or library slots.
+
+This system reduces manual work, streamlines administrative tasks, and provides a clear overview of student activities in educational labs or study centers.
+
+---
+
+## Features
+
+### 1. Admin Access
+- Secure admin login for accessing the dashboard.
+- Full control over student, fees, and slot management.
+
+### 2. Fee Management
+- Add, update, and track monthly fees for students.
+- Automatic next-month fee tracking after payment.
+- Maintain records of paid and pending fees.
+- Visual notifications for due fees.
+
+### 3. Slot Management
+- Manage study room or library slots.
+- Automatic tracking of slot occupancy.
+- Slots divided into:
+  - **Morning:** 7 AM – 2 PM  
+  - **Afternoon:** 2 PM – 10 PM  
+  - **Full Day:** Occupies both morning and afternoon sessions.
+
+### 4. Student Tracking
+- View all students in the library or study rooms.
+- Check timing, occupancy, and allocation details.
+
+### 5. User-Friendly Dashboard
+- Clean interface using HTML, CSS, and JavaScript.
+- Easily navigate between fees, slots, and student lists.
+- Color-coded slots for Morning, Afternoon, and Full Day.
+
+---
+
+## Technologies Used
+- **Frontend:** HTML, CSS, JavaScript  
+- **Data Storage:** Local Storage (browser)  
+- **Backend:** None (fully client-side, but can be extended to server-side if needed)  
+
+---
+
+## How to Use
+
+1. **Clone the repository**
+2. **run**
